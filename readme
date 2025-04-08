@@ -1,0 +1,69 @@
+# 项目结构说明
+# -*- coding: utf-8 -*-
+"""
+本项目采用模块化设计,将爬虫逻辑、存储逻辑、数据库操作、配置管理、定时任务调度等分离,以便于维护和扩展。
+1. 项目模块划分
+(1)入口模块(main.py)
+作用:启动整个项目,包括初始化调度器、爬虫管理器等,进入异步事件循环。
+(2)任务调度模块(scheduler.py)
+作用:使用 APScheduler 或者纯 asyncio 实现定时任务调度,将各个网站爬虫任务定时加入队列。
+示例:使用 AsyncIOScheduler 定时调用爬虫管理器的任务启动方法。
+(3)爬虫管理器(crawler_manager.py)
+作用:
+加载所有网站配置(建议配置化,如 JSON、YAML 或 Python 配置文件)。
+根据配置构建对应的爬虫实例(每个爬虫可以继承一个抽象基类,如 AbstractCrawler)。
+利用 asyncio.gather 并发运行所有网站的爬虫任务,并对任务结果进行汇总与错误处理。
+(4)爬虫模块(crawlers/)
+作用:每个网站对应一个爬虫,统一定义一个抽象爬虫基类(例如 AbstractCrawler),每个具体爬虫实现网站特有的请求和解析逻辑(建议使用 aiohttp 实现异步 HTTP 请求)。
+示例:
+base_crawler.py:定义抽象方法,如 async def crawl(self) -> ArticleContent
+website1_crawler.py:实现对某个网站的爬取逻辑
+(5)数据解析和模型(common.py)
+作用:定义数据模型(例如 ArticleContent),供爬虫解析后的数据构造使用。
+(6)存储模块(storage/)
+作用:你已经实现了存储抽象类 AbstractStore 及其多种实现(CSV、JSON、DB),用于将解析后的数据统一存储到数据库或文件中。
+建议:将存储相关代码放在独立的模块目录下,便于后续扩展和管理。
+(7)数据库操作模块(async_db.py、sqls.py)
+作用:异步数据库操作封装(使用 aiomysql),提供基本的增删改查接口。
+(8)配置模块(config.py)
+作用:统一管理爬虫和存储的配置参数,如目标网站列表、超时、重试次数、数据库连接信息等。
+(9)日志模块(log.py)
+作用:记录任务状态、错误信息和爬取统计,方便问题排查和运行监控。
+(10)监控模块(monitoring.py)
+作用:独立的监控模块,用于实时监控爬虫运行状态,如爬取速度、错误率等。
+"""
+## 目录结构
+project/
+├── crawlers/
+│   ├── __init__.py
+│   ├── base_crawler.py         # 抽象爬虫基类
+│   ├── website1_crawler.py     # 具体网站爬虫实现
+│   └── website2_crawler.py     # ...
+├── storage/
+│   ├── __init__.py
+│   ├── abstract_store.py       # 存储接口
+│   └── abstract_store_impl.py  # 存储接口实现(CSV/JSON/DB)
+├── async_db.py                 # 异步数据库封装
+├── common.py                   # 公共数据模型、辅助函数
+├── sqls.py                     # SQL操作
+├── config.py                   # 项目和爬虫配置
+├── scheduler.py                # 定时任务调度器
+├── crawler_manager.py          # 爬虫任务管理器
+├── log.py                      # 统一配置日志格式、日志级别和日志输出方式
+├── monitoring.py               # 独立的监控模
+└── main.py                     # 项目入口
+
+## 生成依赖文件
+pip freeze > requirements.txt
+
+## Playwright追踪器
+# 启动跟踪功能
+context.tracing.start(snapshots=True, sources=True, screenshots=True)
+#查看网站
+https://trace.playwright.dev/
+
+
+#构建docker镜像或是追踪修改
+docker build -t crawler_project .
+#直接通过docker运行
+docker run -it crawler_project
